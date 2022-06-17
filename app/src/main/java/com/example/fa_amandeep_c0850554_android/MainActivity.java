@@ -1,0 +1,86 @@
+package com.example.fa_amandeep_c0850554_android;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import java.util.List;
+
+import com.example.fa_amandeep_c0850554_android.adapter.FavoritePlaceAdapter;
+import com.example.fa_amandeep_c0850554_android.databinding.ActivityMainBinding;
+import com.example.fa_amandeep_c0850554_android.entity.FavoritePlace;
+import com.example.fa_amandeep_c0850554_android.util.DateUtil;
+import com.example.fa_amandeep_c0850554_android.util.FavoritePlaceRoomDB;
+import com.example.fa_amandeep_c0850554_android.util.ItemClickListener;
+import com.example.fa_amandeep_c0850554_android.util.SwipeCallback;
+
+
+
+public class MainActivity extends AppCompatActivity implements ItemClickListener {
+
+    private ActivityMainBinding binding;
+    private FavoritePlaceRoomDB favoritePlaceRoomDB;
+    private RecyclerView rvFavoritePlaces;
+    private List<FavoritePlace> favoritePlaceList;
+    private FavoritePlaceAdapter favoritePlaceAdapter;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        favoritePlaceRoomDB = FavoritePlaceRoomDB.getInstance(this);
+        binding.FloatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                addFavoritePlace();
+            }
+        });
+        loadFavoritePlaces();
+        rvFavoritePlaces = binding.RvFvtPlaces;
+        rvFavoritePlaces.setLayoutManager(new LinearLayoutManager(this));
+        favoritePlaceAdapter = new FavoritePlaceAdapter(this, favoritePlaceList);
+        favoritePlaceAdapter.setClickListener(this);
+        rvFavoritePlaces.setAdapter(favoritePlaceAdapter);
+        //binding.imgBack.setOnClickListener(this);
+
+        // Attach ItemTouchHelper to the RecyclerView
+        ItemTouchHelper itemTouchHelper = new
+                ItemTouchHelper(new SwipeCallback(this,favoritePlaceAdapter));
+        itemTouchHelper.attachToRecyclerView(rvFavoritePlaces);
+    }
+    private void addFavoritePlace() {
+        Intent i = new Intent(this, AddorUpdateFavoritePlaceActivity.class);
+        startActivity(i);
+    }
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        loadFavoritePlaces();
+        favoritePlaceAdapter.notifyDataSetChanged();
+    }
+    private void loadFavoritePlaces() {
+        favoritePlaceList = favoritePlaceRoomDB.favoritePlaceDao().getAllFavoritePlaces();
+    }
+    /*
+    @Override
+    public void onClick(View view) {
+        Intent i = new Intent(this, FavoritePlaceMapActivity.class);
+        startActivity(i);
+    }
+     */
+    @Override
+    public void onClick(View view, int position) {
+        FavoritePlace favoritePlace = favoritePlaceList.get(position);
+        Intent i = new Intent(this, ViewFavoritePlaceActivity.class);
+        i.putExtra("address", favoritePlace.getAddress());
+        i.putExtra("latitude", favoritePlace.getLatitude());
+        i.putExtra("longitude", favoritePlace.getLongitude());
+        i.putExtra("date", DateUtil.convertToDateString(favoritePlace.getDate()));
+        i.putExtra("visited",favoritePlace.isVisited());
+        startActivity(i);
+    }
+}
